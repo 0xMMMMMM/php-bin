@@ -19,5 +19,6 @@
     "sockets",
     "tokenizer",
     "xml",
-    "zip"
+    "zip",
+    "pdo_pgsql"
 ]
