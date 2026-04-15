@@ -200,15 +200,24 @@ jobs:
           cp ../static-php-cli/buildroot/build-extensions.json build-meta/build-extensions-${{ env.SPC_BUILD_OS }}.json
           cp ../static-php-cli/buildroot/build-libraries.json build-meta/build-libraries-${{ env.SPC_BUILD_OS }}.json
 
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
-        with:
-          branch: update-php-${{ env.PHP_VERSION }}-${{ env.SPC_BUILD_OS }}-${{ env.SPC_BUILD_ARCH }}
-          title: "Update PHP ${{ env.PHP_VERSION }} build for ${{ env.SPC_BUILD_OS }} ${{ env.SPC_BUILD_ARCH }}"
-          commit-message: "build"
-          body: |
-            PHP: ${{ env.PHP_VERSION_FULL }}
-            Exts: ${{ env.PHP_EXTENSIONS }}
-            OS: ${{ env.SPC_BUILD_OS }}
-            Arch: ${{ env.SPC_BUILD_ARCH }}
-          base: main
+      - name: Commit binaries to main
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add bin/ license-files/ build-meta/ php-extensions.txt
+          git commit -m "build: PHP ${{ env.PHP_VERSION_FULL }} ${{ env.SPC_BUILD_OS }} ${{ env.SPC_BUILD_ARCH }}" || echo "No changes to commit"
+          git push
+
+      - name: Create release tag
+        shell: bash
+        run: |
+          TAG="v$(date +'%Y%m%d-%H%M%S')"
+          git tag "$TAG"
+          git push origin "$TAG"
+
+      - name: Create GitHub Release
+        shell: bash
+        run: |
+          TAG=$(git describe --tags --abbrev=0)
+          gh release create "$TAG" --title "PHP ${{ env.PHP_VERSION_FULL }} with pdo_pgsql" --notes "PHP: ${{ env.PHP_VERSION_FULL }}, Extensions: ${{ env.PHP_EXTENSIONS }}"
